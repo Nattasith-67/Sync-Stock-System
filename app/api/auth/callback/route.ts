@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { exchangeLazadaAuthCode } from "@/app/lib/lazada";
 import { prisma } from "@/app/lib/prisma";
 
 const STATE_COOKIE = "lazada-oauth-state";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
   const authorizationError = searchParams.get("error");
   if (authorizationError) {
     return NextResponse.json(

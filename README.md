@@ -28,7 +28,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
    npm run dev
    ```
 
-2. ตั้ง `DATABASE_URL`, `LAZADA_APP_KEY` และ `LAZADA_APP_SECRET` ใน `.env` โดยใช้ค่าฐานข้อมูลให้ตรงกับ `docker-compose.yml`
+2. ตั้ง `DATABASE_URL`, `LAZADA_APP_KEY` และ `LAZADA_APP_SECRET` ใน `.env` โดยใช้ค่าฐานข้อมูลให้ตรงกับ `docker-compose.yml` สำหรับ Development ระบบจะใช้ callback บน host ที่เปิดอยู่; Production จะใช้ `VERCEL_PROJECT_PRODUCTION_URL` ของ Vercel หรือ `https://syncstock-six.vercel.app/api/auth/callback` หากไม่มีค่าดังกล่าว ตั้ง `LAZADA_REDIRECT_URI` ได้เมื่อต้องการ override แต่ callback ต้องตรงกับ URL ที่ลงทะเบียนใน Lazada และ origin เดียวกับเว็บที่เปิด
 3. เพิ่ม callback URL นี้ใน Lazada Open Platform และเปิดสิทธิ์อ่านสินค้า อ่านคำสั่งซื้อ และแก้ไขจำนวนสินค้า:
 
    ```text
@@ -40,7 +40,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 สินค้าที่นำเข้าครั้งแรกจะเริ่มสต็อกกลางด้วยจำนวนจาก Lazada; หลังจากนั้นสต็อกกลางเป็นค่าหลักที่ส่งกลับไปยังร้าน คำสั่งซื้อสถานะชำระเงินแล้วจะหักสต็อกเพียงครั้งเดียว และคำสั่งซื้อที่ยกเลิก/คืนสินค้าจะคืนสต็อกเมื่อระบบตรวจพบในการซิงก์ครั้งถัดไป
 
-การตั้งค่า `localhost` ใช้ได้เฉพาะเมื่อเบราว์เซอร์, แอป และขั้นตอนอนุญาต Lazada เข้าถึงเครื่องเดียวกัน สำหรับ production ต้องลงทะเบียน HTTPS callback URL จริงและใช้ฐานข้อมูลที่ deploy แล้ว
+Callback URL สำหรับ Development คือ `http://localhost:3000/api/auth/callback` ส่วน Production คือ `https://syncstock-six.vercel.app/api/auth/callback` ต้องลงทะเบียน callback ให้ตรงกับสภาพแวดล้อมที่ใช้งาน และเริ่ม OAuth จาก host เดียวกับ callback นั้น สำหรับ production ต้องใช้ฐานข้อมูลที่ deploy แล้ว
 
 > **ข้อจำกัดด้านการใช้งานจริง:** เวอร์ชันนี้เป็นระบบสำหรับพัฒนา/ใช้งานภายใน และยังไม่มีบัญชีผู้ดูแลหรือระบบยืนยันตัวตน ห้ามเปิด Dashboard หรือ API ออกสู่อินเทอร์เน็ตสาธารณะจนกว่าจะเพิ่มการยืนยันตัวตนและสิทธิ์ผู้ใช้
 
