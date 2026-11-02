@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Platform {
+  SHOPEE
+  LAZADA
+}
+
+model Product {
+  id        String           @id @default(cuid())
+  sku       String           @unique
+  name      String
+  stock     Int              @default(0)
+  mappings  ProductMapping[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Shop {
+  id              String             @id @default(cuid())
+  platform        Platform
+  platformShopId  String
+  name            String?
+  accessToken     String             @db.Text
+  refreshToken    String?            @db.Text
+  tokenExpiresAt  DateTime?
+  mappings        ProductMapping[]
+  orders          MarketplaceOrder[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([platform, platformShopId])
+}
+
+model ProductMapping {
+  id          String  @id @default(cuid())
+  productId   String
+  shopId      String
+  platformId  String
+  platformSku String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop        Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, platformId])
+  @@index([productId])
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  platform  Platform
+  event     String
+  payload   String   @db.Text
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model MarketplaceOrder {
+  id              String   @id @default(cuid())
+  shopId          String
+  platformOrderId String
+  status          String
+  isPaid          Boolean  @default(false)
+  stockDeducted   Boolean  @default(false)
+  stockRestored   Boolean  @default(false)
+  itemsPayload    String   @default("[]") @db.Text
+  payload         String   @db.Text
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([shopId, platformOrderId])
+  @@index([status, createdAt])
+}
