@@ -42,14 +42,13 @@ export function getLazadaAuthorizationUrl(
   redirectUri: string,
   state: string,
 ): string {
-  const params = new URLSearchParams({
-    response_type: "code",
-    force_auth: "true",
-    client_id: appKey,
-    redirect_uri: redirectUri,
-    state,
-  });
-  return `${LAZADA_AUTH_URL}?${params}`;
+  const authorizationUrl = new URL(LAZADA_AUTH_URL);
+  authorizationUrl.searchParams.set("response_type", "code");
+  authorizationUrl.searchParams.set("force_auth", "true");
+  authorizationUrl.searchParams.set("client_id", appKey);
+  authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+  authorizationUrl.searchParams.set("state", state);
+  return authorizationUrl.toString();
 }
 
 export async function exchangeLazadaAuthCode({
