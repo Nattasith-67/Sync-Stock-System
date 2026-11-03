@@ -33,13 +33,27 @@ export async function GET(request: Request) {
     !["http:", "https:"].includes(callbackUrl.protocol) ||
     callbackUrl.pathname !== "/api/auth/callback" ||
     callbackUrl.search ||
-    callbackUrl.hash ||
-    callbackUrl.origin !== url.origin
+    callbackUrl.hash
   ) {
     return NextResponse.json(
       {
         error:
-          "LAZADA_REDIRECT_URI must exactly match the registered /api/auth/callback URL and the URL used to open SyncStock",
+          "LAZADA_REDIRECT_URI must exactly match the registered /api/auth/callback URL",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (callbackUrl.origin !== url.origin) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.redirect(
+        new URL("/api/auth/lazada/authorize", callbackUrl.origin),
+      );
+    }
+    return NextResponse.json(
+      {
+        error:
+          "LAZADA_REDIRECT_URI must use the same host as the URL used to open SyncStock",
       },
       { status: 400 },
     );
