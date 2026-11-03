@@ -45,6 +45,7 @@ export function getLazadaAuthorizationUrl(
   const authorizationUrl = new URL(LAZADA_AUTH_URL);
   authorizationUrl.searchParams.set("response_type", "code");
   authorizationUrl.searchParams.set("force_auth", "true");
+  authorizationUrl.searchParams.set("country", "th");
   authorizationUrl.searchParams.set("client_id", appKey);
   authorizationUrl.searchParams.set("redirect_uri", redirectUri);
   authorizationUrl.searchParams.set("state", state);
