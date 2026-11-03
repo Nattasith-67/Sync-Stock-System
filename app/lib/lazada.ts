@@ -117,7 +117,11 @@ export async function callLazadaApi({
     ...requestParams,
     sign: generateLazadaSign(appSecret, path, requestParams),
   });
-  const response = await fetch(`${LAZADA_HOST}${path}`, {
+  const requestUrl = new URL(`${LAZADA_HOST}${path}`);
+  if (method === "GET") {
+    requestUrl.search = query.toString();
+  }
+  const response = await fetch(requestUrl.toString(), {
     method,
     ...(method === "POST"
       ? {
