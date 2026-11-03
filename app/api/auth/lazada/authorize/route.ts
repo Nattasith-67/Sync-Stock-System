@@ -60,13 +60,19 @@ export async function GET(request: Request) {
     callbackUrl.toString(),
     state,
   );
-  const loggedAuthorizationUrl = new URL(authorizationUrl);
-  loggedAuthorizationUrl.searchParams.set("state", "[REDACTED]");
-  console.log("Lazada auth URL:", loggedAuthorizationUrl.toString());
+  const authorizationParams = new URL(authorizationUrl).searchParams;
+  const clientIdMatchesConfiguredKey =
+    authorizationParams.get("client_id") === appKey;
+  const redirectUriMatchesConfiguredUrl =
+    authorizationParams.get("redirect_uri") === callbackUrl.toString();
+  console.info("Lazada OAuth parameter check:", {
+    clientIdMatchesConfiguredKey,
+    clientIdSuffix: appKey.slice(-4),
+    redirectUriMatchesConfiguredUrl,
+    redirectUri: authorizationParams.get("redirect_uri"),
+  });
 
-  const response = NextResponse.redirect(
-    authorizationUrl,
-  );
+  const response = NextResponse.redirect(authorizationUrl);
   response.cookies.set(STATE_COOKIE, state, {
     httpOnly: true,
     sameSite: "lax",
