@@ -153,7 +153,25 @@ export default function Dashboard() {
         setNotice("เชื่อมต่อร้าน Lazada สำเร็จแล้ว");
         window.history.replaceState({}, "", window.location.pathname);
       } else if (result === "error") {
-        setError("เชื่อมต่อ Lazada ไม่สำเร็จ กรุณาตรวจสอบการตั้งค่าแล้วลองใหม่");
+        const reason = new URLSearchParams(window.location.search).get("reason");
+        const errorMessages: Record<string, string> = {
+          authorization:
+            "Lazada ไม่อนุมัติการเชื่อมต่อ อาจถูกยกเลิก หรือ App Key/Callback URL ไม่ตรงกับแอปที่ลงทะเบียน",
+          invalid_state:
+            "สถานะการเชื่อมต่อหมดอายุหรือโดเมนเปลี่ยนระหว่างทาง กรุณาเริ่มเชื่อมต่อใหม่จากหน้าเว็บหลัก",
+          missing_code:
+            "Lazada ไม่ได้ส่ง Authorization Code กลับมา กรุณาตรวจสิทธิ์และการตั้งค่า OAuth ของแอป",
+          token_exchange:
+            "แลก Authorization Code กับ Lazada ไม่สำเร็จ กรุณาตรวจ App Key, App Secret และดู Vercel Function Logs สำหรับรายละเอียด",
+          seller_info:
+            "Lazada ไม่ได้ส่งข้อมูลร้านค้ากลับมา กรุณาตรวจสิทธิ์และประเทศของร้านค้า",
+          database:
+            "รับข้อมูลจาก Lazada แล้ว แต่บันทึกร้านค้าไม่สำเร็จ กรุณาตรวจ Database และ Vercel Function Logs",
+        };
+        setError(
+          errorMessages[reason ?? ""] ??
+            "เชื่อมต่อ Lazada ไม่สำเร็จ กรุณาตรวจ Vercel Function Logs",
+        );
         window.history.replaceState({}, "", window.location.pathname);
       }
     }, 0);

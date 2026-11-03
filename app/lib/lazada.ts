@@ -189,7 +189,7 @@ async function requestLazadaToken(
     body: query.toString(),
     cache: "no-store",
   });
-  const result = await parseLazadaResponse(response, path);
+  const result = await parseLazadaResponse(response, path, true);
   if (!isRecord(result) || !isRecord(result.data)) {
     throw new Error(`Lazada ${path} response is missing token data`);
   }
@@ -235,11 +235,40 @@ async function requestLazadaToken(
 async function parseLazadaResponse(
   response: Response,
   path: string,
+  logTokenResponse = false,
 ): Promise<unknown> {
-  if (!response.ok) {
+  if (!response.ok && !logTokenResponse) {
     throw new Error(`Lazada ${path} request failed with status ${response.status}`);
   }
   const result: unknown = await response.json();
+  if (logTokenResponse) {
+    const data =
+      isRecord(result) && isRecord(result.data) ? result.data : undefined;
+    console.info("Lazada token response:", {
+      path,
+      httpStatus: response.status,
+      httpOk: response.ok,
+      responseCode:
+        isRecord(result) &&
+        (typeof result.code === "string" || typeof result.code === "number")
+          ? result.code
+          : null,
+      hasTokenData: Boolean(data),
+      hasAccessToken: Boolean(
+        data && typeof data.access_token === "string" && data.access_token,
+      ),
+      hasRefreshToken: Boolean(
+        data && typeof data.refresh_token === "string" && data.refresh_token,
+      ),
+      hasExpiry: Boolean(data && data.expires_in !== undefined),
+      sellerInfoCount: Array.isArray(data?.country_user_info)
+        ? data.country_user_info.length
+        : 0,
+    });
+  }
+  if (!response.ok) {
+    throw new Error(`Lazada ${path} request failed with status ${response.status}`);
+  }
   if (!isRecord(result) || result.code !== "0") {
     const message =
       isRecord(result) && typeof result.message === "string"

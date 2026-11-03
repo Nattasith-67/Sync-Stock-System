@@ -6,40 +6,61 @@ import { env } from "@/app/lib/env";
 
 const STATE_COOKIE = "lazada-oauth-state";
 
+type OAuthFailureReason =
+  | "authorization"
+  | "invalid_state"
+  | "missing_code"
+  | "token_exchange"
+  | "seller_info"
+  | "database";
+
+function redirectToOAuthError(
+  request: NextRequest,
+  reason: OAuthFailureReason,
+) {
+  const response = NextResponse.redirect(
+    new URL(`/?lazada=error&reason=${reason}`, request.url),
+  );
+  response.cookies.delete(STATE_COOKIE);
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const authorizationError = searchParams.get("error");
   if (authorizationError) {
-    return NextResponse.json(
-      { error: "Lazada authorization was not completed" },
-      { status: 400 },
-    );
+    console.warn("Lazada authorization was rejected", {
+      error: authorizationError,
+    });
+    return redirectToOAuthError(request, "authorization");
   }
 
   const cookieStore = await cookies();
   const expectedState = cookieStore.get(STATE_COOKIE)?.value;
   const receivedState = searchParams.get("state");
   if (!expectedState || !receivedState || expectedState !== receivedState) {
-    return NextResponse.json(
-      { error: "Invalid or expired Lazada authorization state" },
-      { status: 400 },
-    );
+    console.warn("Lazada OAuth state validation failed", {
+      hasExpectedState: Boolean(expectedState),
+      hasReceivedState: Boolean(receivedState),
+      statesMatch: Boolean(expectedState && receivedState === expectedState),
+    });
+    return redirectToOAuthError(request, "invalid_state");
   }
 
   const code = searchParams.get("code");
   if (!code) {
-    return NextResponse.json(
-      { error: "Missing authorization code from Lazada" },
-      { status: 400 },
-    );
+    console.warn("Lazada OAuth callback did not include an authorization code");
+    return redirectToOAuthError(request, "missing_code");
   }
 
+  let failureStage: OAuthFailureReason = "token_exchange";
   try {
     const token = await exchangeLazadaAuthCode({
       appKey: env.LAZADA_APP_KEY,
       appSecret: env.LAZADA_APP_SECRET,
       code,
     });
+    failureStage = "seller_info";
     const sellerInfo = token.country_user_info?.[0];
     if (!sellerInfo) {
       throw new Error("Lazada token response is missing seller information");
@@ -50,6 +71,7 @@ export async function GET(request: NextRequest) {
     }
     const expiresIn = Number(token.expires_in);
 
+    failureStage = "database";
     await prisma.shop.upsert({
       where: {
         platform_platformShopId: {
@@ -84,11 +106,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete(STATE_COOKIE);
     return response;
   } catch (error) {
-    console.error("Lazada OAuth callback failed:", error);
-    const response = NextResponse.redirect(
-      new URL("/?lazada=error", request.url),
-    );
-    response.cookies.delete(STATE_COOKIE);
-    return response;
+    console.error(`Lazada OAuth ${failureStage} failed:`, error);
+    return redirectToOAuthError(request, failureStage);
   }
 }
