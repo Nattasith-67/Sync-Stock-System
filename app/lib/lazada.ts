@@ -277,11 +277,16 @@ async function parseLazadaResponse(
     throw new Error(`Lazada ${path} request failed with status ${response.status}`);
   }
   const result: unknown = await response.json();
-  if (!isRecord(result) || result.code !== "0") {
+  if (
+    !isRecord(result) ||
+    (result.code !== "0" && result.code !== 0)
+  ) {
     const message =
       isRecord(result) && typeof result.message === "string"
         ? result.message
-        : "Invalid API response";
+        : `Invalid API response (code: ${
+            isRecord(result) ? String(result.code ?? "missing") : "invalid JSON"
+          })`;
     throw new Error(`Lazada ${path} failed: ${message}`);
   }
   return result;

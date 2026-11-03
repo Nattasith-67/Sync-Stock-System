@@ -52,6 +52,11 @@ export async function POST(request: Request) {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unknown Lazada sync error";
+        console.error("Lazada shop sync failed:", {
+          shopId: shop.platformShopId,
+          action,
+          error: message,
+        });
         await writeSyncLog("SYNC_FAILED", "FAILED", {
           shopId: shop.platformShopId,
           action,

@@ -427,10 +427,14 @@ export async function writeSyncLog(
 }
 
 function getData(value: unknown): unknown {
-  if (!isRecord(value) || value.data === undefined) {
-    throw new Error("Lazada API response is missing data");
+  if (!isRecord(value)) {
+    throw new Error("Lazada API response is not an object");
   }
-  return value.data;
+  if (value.data !== undefined) return value.data;
+  if (value.result !== undefined) return value.result;
+  throw new Error(
+    `Lazada API response is missing data/result (keys: ${Object.keys(value).join(", ")})`,
+  );
 }
 
 function isLazadaProduct(value: unknown): value is LazadaProduct {

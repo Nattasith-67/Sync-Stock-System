@@ -190,11 +190,7 @@ export default function Dashboard() {
       });
       const result: unknown = await response.json();
       if (!response.ok) {
-        throw new Error(
-          isRecord(result) && typeof result.error === "string"
-            ? result.error
-            : "ซิงก์บางรายการไม่สำเร็จ โปรดตรวจประวัติ Sync",
-        );
+        throw new Error(getSyncFailureMessage(result));
       }
       setNotice(syncSummary(action));
       await loadData();
@@ -979,6 +975,52 @@ function logSummary(payload: string): string {
   } catch {
     return "รายละเอียดไม่พร้อมใช้งาน";
   }
+}
+
+function getSyncFailureMessage(payload: unknown): string {
+  if (!isRecord(payload)) {
+    return "ซิงก์ไม่สำเร็จ โปรดตรวจประวัติ Sync";
+  }
+
+  const failures: string[] = [];
+  if (Array.isArray(payload.results)) {
+    for (const result of payload.results) {
+      if (!isRecord(result)) continue;
+      const shop = typeof result.shopId === "string" ? `ร้าน ${result.shopId}` : "ร้าน Lazada";
+      if (typeof result.error === "string") {
+        failures.push(`${shop}: ${result.error}`);
+        continue;
+      }
+
+      for (const stageName of ["products", "orders", "stock"] as const) {
+        const stage = result[stageName];
+        if (!isRecord(stage)) continue;
+        const failed = Number(stage.failed) || 0;
+        const skipped = Number(stage.skippedSkus) || 0;
+        const stageErrors = Array.isArray(stage.errors)
+          ? stage.errors.filter((error): error is string => typeof error === "string")
+          : [];
+        if (failed || skipped || stageErrors.length) {
+          failures.push(
+            `${shop} (${stageName}): ${[
+              failed ? `ล้มเหลว ${failed} รายการ` : "",
+              skipped ? `ข้าม ${skipped} SKU` : "",
+              ...stageErrors,
+            ]
+              .filter(Boolean)
+              .join(", ")}`,
+          );
+        }
+      }
+    }
+  }
+
+  if (failures.length) {
+    return `ซิงก์ไม่สำเร็จ: ${failures.join(" | ")}`;
+  }
+  return typeof payload.error === "string"
+    ? payload.error
+    : "ซิงก์ไม่สำเร็จ โปรดตรวจประวัติ Sync";
 }
 
 function formatEvent(event: string): string {
