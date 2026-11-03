@@ -55,8 +55,17 @@ export async function GET(request: Request) {
   }
 
   const state = crypto.randomUUID();
+  const authorizationUrl = getLazadaAuthorizationUrl(
+    appKey,
+    callbackUrl.toString(),
+    state,
+  );
+  const loggedAuthorizationUrl = new URL(authorizationUrl);
+  loggedAuthorizationUrl.searchParams.set("state", "[REDACTED]");
+  console.log("Lazada auth URL:", loggedAuthorizationUrl.toString());
+
   const response = NextResponse.redirect(
-    getLazadaAuthorizationUrl(appKey, callbackUrl.toString(), state),
+    authorizationUrl,
   );
   response.cookies.set(STATE_COOKIE, state, {
     httpOnly: true,
