@@ -34,7 +34,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
    http://localhost:3000/api/auth/callback
    ```
 
-   เมื่อติดตั้งบน Vercel ให้ตั้ง `LAZADA_REDIRECT_URI` ใน Environment Variables เป็น callback URL ของ production ที่ลงทะเบียนใน Lazada เช่น `https://syncstock-six.vercel.app/api/auth/callback` หากเปิดจาก Vercel Preview URL ระบบจะส่งต่อไปเริ่ม OAuth บนโดเมน production นี้ และหลังเชื่อมต่อจะกลับมาที่โดเมน production
+   เมื่อติดตั้งบน Vercel ให้ตั้ง `LAZADA_REDIRECT_URI` ใน Production Environment Variables เป็น callback URL เดียวกับที่ลงทะเบียนใน Lazada:
+
+   ```text
+   https://sync-stock-system-phi.vercel.app/api/auth/callback
+   ```
+
+   อย่าใช้ `VERCEL_PROJECT_PRODUCTION_URL` เป็น callback อัตโนมัติ เพราะอาจชี้ไปยัง Vercel alias คนละโดเมนกับที่ลงทะเบียนไว้ หากไม่กำหนด `LAZADA_REDIRECT_URI` ระบบจะใช้ callback URL ข้างต้นเป็นค่าเริ่มต้น เมื่อเปิดจาก Vercel Preview URL ระบบจะส่งต่อไปเริ่ม OAuth บนโดเมน production นี้
 
    ระบบตรวจสอบรูปแบบตัวแปรฝั่งเซิร์ฟเวอร์ด้วย Zod เมื่อเริ่มโหลด หากค่าที่จำเป็นหายไปหรือ URL ไม่ถูกต้อง จะแจ้งชื่อ key ที่มีปัญหาโดยไม่แสดง secret
 

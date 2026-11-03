@@ -3,6 +3,8 @@ import { getLazadaAuthorizationUrl } from "@/app/lib/lazada";
 import { env } from "@/app/lib/env";
 
 const STATE_COOKIE = "lazada-oauth-state";
+const DEFAULT_PRODUCTION_REDIRECT_URI =
+  "https://sync-stock-system-phi.vercel.app/api/auth/callback";
 
 export async function GET(request: Request) {
   const appKey = env.LAZADA_APP_KEY;
@@ -10,7 +12,7 @@ export async function GET(request: Request) {
   const redirectUri =
     env.LAZADA_REDIRECT_URI ??
     (env.NODE_ENV === "production"
-      ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL || "sync-stock-system-phi.vercel.app"}/api/auth/callback`
+      ? DEFAULT_PRODUCTION_REDIRECT_URI
       : `${url.origin}/api/auth/callback`);
 
   let callbackUrl: URL;
