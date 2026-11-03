@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 const LAZADA_HOST = "https://api.lazada.co.th/rest";
 const LAZADA_AUTH_URL = "https://auth.lazada.com/oauth/authorize";
+const LAZADA_AUTH_API_HOST = "https://auth.lazada.com/rest";
 
 export interface LazadaTokenResponse {
   access_token: string;
@@ -181,7 +182,7 @@ async function requestLazadaToken(
     ...requestParams,
     sign: generateLazadaSign(appSecret, path, requestParams),
   });
-  const response = await fetch(`${LAZADA_HOST}${path}`, {
+  const response = await fetch(`${LAZADA_AUTH_API_HOST}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
@@ -189,11 +190,47 @@ async function requestLazadaToken(
     body: query.toString(),
     cache: "no-store",
   });
-  const result = await parseLazadaResponse(response, path, true);
-  if (!isRecord(result) || !isRecord(result.data)) {
-    throw new Error(`Lazada ${path} response is missing token data`);
+  let result: unknown;
+  try {
+    result = await response.json();
+  } catch {
+    console.error("Lazada token response was not valid JSON", {
+      path,
+      httpStatus: response.status,
+    });
+    throw new Error(`Lazada ${path} response was not valid JSON`);
   }
-  const data = result.data;
+  const tokenData = findTokenData(result);
+  const responseCode =
+    isRecord(result) &&
+    (typeof result.code === "string" || typeof result.code === "number")
+      ? result.code
+      : null;
+  console.info("Lazada token response:", {
+    path,
+    httpStatus: response.status,
+    httpOk: response.ok,
+    responseCode,
+    responseKeys: isRecord(result) ? Object.keys(result) : [],
+    tokenDataPath: tokenData?.path ?? null,
+    tokenDataKeys: tokenData ? Object.keys(tokenData.data) : [],
+    hasAccessToken: Boolean(tokenData?.data.access_token),
+    hasRefreshToken: Boolean(tokenData?.data.refresh_token),
+    sellerInfoCount: Array.isArray(tokenData?.data.country_user_info)
+      ? tokenData.data.country_user_info.length
+      : 0,
+  });
+  if (!response.ok) {
+    throw new Error(`Lazada ${path} request failed with status ${response.status}`);
+  }
+  if (!tokenData) {
+    const message =
+      isRecord(result) && typeof result.message === "string"
+        ? `: ${result.message}`
+        : "";
+    throw new Error(`Lazada ${path} response is missing token data${message}`);
+  }
+  const data = tokenData.data;
   if (typeof data.access_token !== "string" || !data.access_token) {
     throw new Error(`Lazada ${path} response is missing an access token`);
   }
@@ -235,40 +272,11 @@ async function requestLazadaToken(
 async function parseLazadaResponse(
   response: Response,
   path: string,
-  logTokenResponse = false,
 ): Promise<unknown> {
-  if (!response.ok && !logTokenResponse) {
-    throw new Error(`Lazada ${path} request failed with status ${response.status}`);
-  }
-  const result: unknown = await response.json();
-  if (logTokenResponse) {
-    const data =
-      isRecord(result) && isRecord(result.data) ? result.data : undefined;
-    console.info("Lazada token response:", {
-      path,
-      httpStatus: response.status,
-      httpOk: response.ok,
-      responseCode:
-        isRecord(result) &&
-        (typeof result.code === "string" || typeof result.code === "number")
-          ? result.code
-          : null,
-      hasTokenData: Boolean(data),
-      hasAccessToken: Boolean(
-        data && typeof data.access_token === "string" && data.access_token,
-      ),
-      hasRefreshToken: Boolean(
-        data && typeof data.refresh_token === "string" && data.refresh_token,
-      ),
-      hasExpiry: Boolean(data && data.expires_in !== undefined),
-      sellerInfoCount: Array.isArray(data?.country_user_info)
-        ? data.country_user_info.length
-        : 0,
-    });
-  }
   if (!response.ok) {
     throw new Error(`Lazada ${path} request failed with status ${response.status}`);
   }
+  const result: unknown = await response.json();
   if (!isRecord(result) || result.code !== "0") {
     const message =
       isRecord(result) && typeof result.message === "string"
@@ -277,6 +285,25 @@ async function parseLazadaResponse(
     throw new Error(`Lazada ${path} failed: ${message}`);
   }
   return result;
+}
+
+function findTokenData(
+  value: unknown,
+  path = "root",
+): { data: Record<string, unknown>; path: string } | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  if (typeof value.access_token === "string" && value.access_token) {
+    return { data: value, path };
+  }
+  for (const key of ["data", "result"] as const) {
+    const nested = findTokenData(value[key], `${path}.${key}`);
+    if (nested) {
+      return nested;
+    }
+  }
+  return undefined;
 }
 
 function generateLazadaSign(
