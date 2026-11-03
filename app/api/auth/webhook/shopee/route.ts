@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
+import { env } from "@/app/lib/env";
 import { updateLazadaStock } from "@/app/lib/lazada";
 
 export async function POST(req: Request) {
@@ -72,12 +73,6 @@ export async function POST(req: Request) {
         include: { shop: true },
       });
 
-      const lazadaAppKey = process.env.LAZADA_APP_KEY;
-      const lazadaAppSecret = process.env.LAZADA_APP_SECRET;
-      if (lazadaMapping && (!lazadaAppKey || !lazadaAppSecret)) {
-        throw new Error("LAZADA_APP_KEY and LAZADA_APP_SECRET must be configured");
-      }
-
       const newStock = await prisma.$transaction(async (transaction) => {
         const updated = await transaction.product.updateMany({
           where: {
@@ -98,10 +93,10 @@ export async function POST(req: Request) {
         return product.stock;
       });
 
-      if (lazadaMapping && lazadaAppKey && lazadaAppSecret) {
+      if (lazadaMapping) {
         await updateLazadaStock({
-          appKey: lazadaAppKey,
-          appSecret: lazadaAppSecret,
+          appKey: env.LAZADA_APP_KEY,
+          appSecret: env.LAZADA_APP_SECRET,
           accessToken: lazadaMapping.shop.accessToken,
           sellerSku: lazadaMapping.platformSku,
           quantity: newStock,

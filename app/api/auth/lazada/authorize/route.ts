@@ -1,23 +1,16 @@
 import { NextResponse } from "next/server";
 import { getLazadaAuthorizationUrl } from "@/app/lib/lazada";
+import { env } from "@/app/lib/env";
 
 const STATE_COOKIE = "lazada-oauth-state";
 
 export async function GET(request: Request) {
-  const appKey = process.env.LAZADA_APP_KEY;
-  const appSecret = process.env.LAZADA_APP_SECRET;
-  if (!appKey || !appSecret) {
-    return NextResponse.json(
-      { error: "Set LAZADA_APP_KEY and LAZADA_APP_SECRET first" },
-      { status: 503 },
-    );
-  }
-
+  const appKey = env.LAZADA_APP_KEY;
   const url = new URL(request.url);
   const redirectUri =
-    process.env.LAZADA_REDIRECT_URI ??
-    (process.env.NODE_ENV === "production"
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL || "syncstock-six.vercel.app"}/api/auth/callback`
+    env.LAZADA_REDIRECT_URI ??
+    (env.NODE_ENV === "production"
+      ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL || "syncstock-six.vercel.app"}/api/auth/callback`
       : `${url.origin}/api/auth/callback`);
 
   let callbackUrl: URL;
@@ -45,7 +38,7 @@ export async function GET(request: Request) {
   }
 
   if (callbackUrl.origin !== url.origin) {
-    if (process.env.NODE_ENV === "production") {
+    if (env.NODE_ENV === "production") {
       return NextResponse.redirect(
         new URL("/api/auth/lazada/authorize", callbackUrl.origin),
       );

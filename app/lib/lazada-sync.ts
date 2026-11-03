@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/prisma";
+import { env } from "@/app/lib/env";
 import {
   callLazadaApi,
   refreshLazadaAccessToken,
@@ -25,12 +26,7 @@ type OrderLine = {
 };
 
 export function getLazadaCredentials() {
-  const appKey = process.env.LAZADA_APP_KEY;
-  const appSecret = process.env.LAZADA_APP_SECRET;
-  if (!appKey || !appSecret) {
-    throw new Error("LAZADA_APP_KEY and LAZADA_APP_SECRET must be configured");
-  }
-  return { appKey, appSecret };
+  return { appKey: env.LAZADA_APP_KEY, appSecret: env.LAZADA_APP_SECRET };
 }
 
 async function getAccessToken(shop: LazadaShop): Promise<string> {

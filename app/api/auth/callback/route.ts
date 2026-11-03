@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { exchangeLazadaAuthCode } from "@/app/lib/lazada";
 import { prisma } from "@/app/lib/prisma";
+import { env } from "@/app/lib/env";
 
 const STATE_COOKIE = "lazada-oauth-state";
 
@@ -33,18 +34,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const appKey = process.env.LAZADA_APP_KEY;
-  const appSecret = process.env.LAZADA_APP_SECRET;
-  if (!appKey || !appSecret) {
-    console.error("LAZADA_APP_KEY and LAZADA_APP_SECRET must be configured");
-    return NextResponse.json(
-      { error: "Lazada integration is not configured" },
-      { status: 500 },
-    );
-  }
-
   try {
-    const token = await exchangeLazadaAuthCode({ appKey, appSecret, code });
+    const token = await exchangeLazadaAuthCode({
+      appKey: env.LAZADA_APP_KEY,
+      appSecret: env.LAZADA_APP_SECRET,
+      code,
+    });
     const sellerInfo = token.country_user_info?.[0];
     if (!sellerInfo) {
       throw new Error("Lazada token response is missing seller information");

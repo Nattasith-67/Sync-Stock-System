@@ -35,6 +35,9 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
    ```
 
    เมื่อติดตั้งบน Vercel ให้ตั้ง `LAZADA_REDIRECT_URI` ใน Environment Variables เป็น callback URL ของ production ที่ลงทะเบียนใน Lazada เช่น `https://syncstock-six.vercel.app/api/auth/callback` หากเปิดจาก Vercel Preview URL ระบบจะส่งต่อไปเริ่ม OAuth บนโดเมน production นี้ และหลังเชื่อมต่อจะกลับมาที่โดเมน production
+
+   ระบบตรวจสอบรูปแบบตัวแปรฝั่งเซิร์ฟเวอร์ด้วย Zod เมื่อเริ่มโหลด หากค่าที่จำเป็นหายไปหรือ URL ไม่ถูกต้อง จะแจ้งชื่อ key ที่มีปัญหาโดยไม่แสดง secret
+
 3. เพิ่ม callback URL เดียวกันใน Lazada Open Platform และเปิดสิทธิ์อ่านสินค้า อ่านคำสั่งซื้อ และแก้ไขจำนวนสินค้า
 4. เปิดหน้า SyncStock แล้วเลือก **เชื่อมต่อ Lazada** เพื่อเริ่ม OAuth ห้ามเปิด callback URL เปล่าโดยตรง
 5. หลังเชื่อมต่อแล้ว ใช้ปุ่ม **ซิงก์ทั้งหมด** เพื่อดึงสินค้า ตรวจคำสั่งซื้อย้อนหลัง 30 วัน และส่งสต็อกกลางไป Lazada
